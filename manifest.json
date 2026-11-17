@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "6axam.youtube-music",
+  "name": "YouTube Music",
+  "version": "1.0.0",
+  "author": "6axam",
+  "description": "An animated YouTube Music bar player with a synced queue for Omarchy.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "YouTube Music",
+    "description": "Controls, album art, seeking and a queue for YouTube Music in Opera GX.",
+    "category": "Media",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
