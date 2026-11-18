@@ -459,6 +459,7 @@ Item {
         delegate: Rectangle {
           id: trackRow
           required property var trackData
+          required property int index
           readonly property var modelData: trackData
           width: upcomingList.width
           height: 46
@@ -472,7 +473,7 @@ Item {
           readonly property real edgeSide: viewportCenter<upcomingList.height/2 ? -1 : 1
           Component.onCompleted: arrival=1
           opacity: arrival*(0.35+0.65*edgeReveal)
-          scale: (0.88+0.12*edgeReveal)*pressScale
+          scale: (index===0 || index===upcomingList.count-1 ? 1 : 0.88+0.12*edgeReveal)*pressScale
           transformOrigin: Item.Center
           transform: Translate { y: trackRow.edgeSide*(11*(1-trackRow.edgeReveal)+8*(1-trackRow.arrival)) }
           Behavior on arrival { NumberAnimation { duration: 230; easing.type: Easing.OutCubic } }
