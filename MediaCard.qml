@@ -96,7 +96,7 @@ Item {
         renderSize: 640
         opacity: root.phase(0, 0.18)
         artUrl: root.player ? (root.player.trackArtUrl || "") : ""
-        trackKey: root.player ? JSON.stringify([root.player.trackTitle || "", root.player.trackArtist || "", root.player.trackAlbum || ""]) : ""
+        trackKey: root.player ? String(root.player.trackTitle || "") : ""
         trackIndex: root.queueController ? root.queueController.currentIndex : -1
         active: root.active
         foreground: root.foreground

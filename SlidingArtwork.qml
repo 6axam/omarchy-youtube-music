@@ -58,11 +58,19 @@ Item {
       return
     }
     if (sliding) return // Finish the current swipe, then show the latest track.
-    if (trackKey===displayedKey && artUrl===displayedUrl) {
+    // Late artwork or album metadata is still the same track. Update the
+    // visible image in place rather than launching another full swipe.
+    if (trackKey===displayedKey) {
       awaitingArtwork=false
+      if (artUrl!==displayedUrl) {
+        slot(front).artUrl=artUrl
+        displayedUrl=artUrl
+      }
       if (trackIndex>=0) displayedIndex=trackIndex
       return
     }
+    // A transient empty title while the player changes tracks is not a song.
+    if (!trackKey && displayedKey) return
     if (awaitingArtwork && pendingKey===trackKey && pendingUrl===artUrl) {
       if (trackIndex>=0) pendingIndex=trackIndex
       return
