@@ -182,7 +182,7 @@ Item {
       spacing: 1
       opacity: root.phase(0.3, 0.78)
       transform: Translate { y: 12 * (1 - root.phase(0.3, 0.78)) }
-      visible: root.duration > 0 && root.player && root.player.positionSupported
+      // Keep the timeline in place while the next track is loading.
       MediaSlider {
         id: timeline
         width: parent.width
@@ -194,9 +194,9 @@ Item {
         fillColor: root.accent
         knobColor: root.accent
         trackColor: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.12)
-        enabled: root.player && root.player.canSeek
+        enabled: root.player && root.player.canSeek && root.duration > 0
         onReleased: function(value) {
-          if (root.player && root.player.canSeek) {
+          if (root.player && root.player.canSeek && root.duration > 0) {
             if (root.queueController) root.queueController.seek(value)
             else root.player.position = value
             root.syncPosition()
@@ -214,7 +214,7 @@ Item {
         }
         Text {
           anchors.right: parent.right
-          text: root.timeLabel(root.duration)
+          text: root.duration > 0 ? root.timeLabel(root.duration) : "—:—"
           color: root.muted
           font.family: Style.font.family
           font.pixelSize: 10

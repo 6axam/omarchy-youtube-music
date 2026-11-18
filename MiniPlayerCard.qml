@@ -23,7 +23,7 @@ Item {
       position = player && player.positionSupported ? Math.max(0, player.position) : 0
   }
   function seek(seconds) {
-    if (!player || !player.canSeek) return
+    if (!player || !player.canSeek || duration <= 0) return
     position = seconds
     seekHoldUntil = Date.now() + 800
     if (queueController) queueController.seek(seconds)
@@ -118,7 +118,7 @@ Item {
     Column {
       width: parent.width
       spacing: 0
-      visible: root.duration > 0 && root.player && root.player.positionSupported
+      // Keep the timeline in place while the next track is loading.
       MediaSlider {
         id: timeline
         width: parent.width
@@ -130,7 +130,7 @@ Item {
         fillColor: root.accent
         knobColor: root.accent
         trackColor: Qt.rgba(root.foreground.r, root.foreground.g, root.foreground.b, 0.13)
-        enabled: root.player && root.player.canSeek
+        enabled: root.player && root.player.canSeek && root.duration > 0
         onReleased: function(value) { root.seek(value) }
       }
       Item {
@@ -144,7 +144,7 @@ Item {
         }
         Text {
           anchors.right: parent.right
-          text: root.timeLabel(root.duration)
+          text: root.duration > 0 ? root.timeLabel(root.duration) : "—:—"
           color: root.muted
           font.family: Style.font.family
           font.pixelSize: 9
