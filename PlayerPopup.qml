@@ -27,9 +27,9 @@ PopupWindow {
     var base = Commons.Color.popups.background
     if (!root.tintEnabled) return Qt.rgba(base.r, base.g, base.b, 1)
     var color = root.artworkColor
-    return Qt.rgba(base.r * 0.72 + color.r * 0.16,
-                   base.g * 0.72 + color.g * 0.16,
-                   base.b * 0.72 + color.b * 0.16, 1)
+    return Qt.rgba(base.r * 0.72 + color.r * 0.21,
+                   base.g * 0.72 + color.g * 0.21,
+                   base.b * 0.72 + color.b * 0.21, 1)
   }
   Behavior on backgroundColor { ColorAnimation { duration: Style.duration(650); easing.type: Easing.InOutCubic } }
   property real reveal: 0
