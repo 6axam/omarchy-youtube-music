@@ -38,6 +38,7 @@ Item {
     return m + ":" + (s % 60 < 10 ? "0" : "") + (s % 60)
   }
   function action(name) {
+    if (name==="previous" || name==="next") artworkSlide.hintDirection(name==="previous" ? -1 : 1)
     if (mediaService && player) mediaService.runAction(name, false, mediaService.playerKey(player))
   }
   Timer {
@@ -87,6 +88,7 @@ Item {
       width: parent.width
       height: 168
       SlidingArtwork {
+        id: artworkSlide
         x: 0
         y: -34 * (1 - root.revealProgress)
         width: 56 + (parent.width - 56) * root.revealProgress
@@ -95,6 +97,7 @@ Item {
         opacity: root.phase(0, 0.18)
         artUrl: root.player ? (root.player.trackArtUrl || "") : ""
         trackKey: root.player ? JSON.stringify([root.player.trackTitle || "", root.player.trackArtist || "", root.player.trackAlbum || ""]) : ""
+        trackIndex: root.queueController ? root.queueController.currentIndex : -1
         active: root.active
         foreground: root.foreground
         accent: root.accent
@@ -546,8 +549,11 @@ Item {
             cursorShape: Qt.PointingHandCursor
             onClicked: {
               if (!root.queueController) return
-              if (!trackRow.modelData.current) root.queueController.selectTrack(trackRow.modelData)
-              else if (!root.playing) root.action("playPause")
+              if (!trackRow.modelData.current) {
+                if (root.queueController.currentIndex>=0)
+                  artworkSlide.hintDirection(trackRow.modelData.index<root.queueController.currentIndex ? -1 : 1)
+                root.queueController.selectTrack(trackRow.modelData)
+              } else if (!root.playing) root.action("playPause")
             }
           }
         }
