@@ -473,7 +473,13 @@ Item {
           readonly property real edgeSide: viewportCenter<upcomingList.height/2 ? -1 : 1
           Component.onCompleted: arrival=1
           opacity: arrival*(0.35+0.65*edgeReveal)
-          scale: (index===0 || index===upcomingList.count-1 ? 1 : 0.88+0.12*edgeReveal)*pressScale
+          readonly property real endpointScroll: index===0
+            ? upcomingList.contentY-upcomingList.originY
+            : (index===upcomingList.count-1
+              ? upcomingList.originY+Math.max(0,upcomingList.contentHeight-upcomingList.height)-upcomingList.contentY
+              : 24)
+          readonly property real endpointRelease: Math.max(0,Math.min(1,endpointScroll/24))
+          scale: (1-0.12*(1-edgeReveal)*endpointRelease)*pressScale
           transformOrigin: Item.Center
           transform: Translate { y: trackRow.edgeSide*(11*(1-trackRow.edgeReveal)+8*(1-trackRow.arrival)) }
           Behavior on arrival { NumberAnimation { duration: 230; easing.type: Easing.OutCubic } }
