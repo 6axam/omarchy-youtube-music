@@ -57,6 +57,10 @@ bash ~/.config/omarchy/plugins/6axam.youtube-music/setup-browser.sh
 OPERA_GX_COMMAND=/путь/к/opera-gx bash ~/.config/omarchy/plugins/6axam.youtube-music/setup-browser.sh
 ```
 
+## Аудиоспектр
+
+В полном плеере полоски реагируют на звук системного выхода, а их цвет подбирается по обложке. Для эффекта нужна установленная программа `cava` и работающий PipeWire/PulseAudio; без Cava остальные функции плеера продолжают работать.
+
 ## Управление
 
 | Действие | Результат |

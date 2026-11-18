@@ -130,12 +130,32 @@ Item {
           textFormat: Text.PlainText
         }
       }
+      TextMetrics {
+        id: titleMeasure
+        font.family: Style.font.family
+        font.pixelSize: 18
+        font.bold: true
+        text: root.player ? (root.player.trackTitle || "") : ""
+      }
+      AudioSpectrum {
+        id: spectrum
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: 14
+        anchors.bottomMargin: 14
+        width: Math.max(0, Math.min(192, parent.width - Math.max(130, Math.min(parent.width * 0.65, titleMeasure.width + 30)) - 14))
+        height: 82
+        active: root.active && root.hasMedia && root.revealProgress > 0.9
+        playing: root.playing
+        artUrl: root.player ? (root.player.trackArtUrl || "") : ""
+        fallbackColor: root.accent
+      }
       Column {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         anchors.leftMargin: 14 + 54 * (1 - root.revealProgress)
-        anchors.rightMargin: 14
+        anchors.rightMargin: spectrum.active && spectrum.barCount >= 3 ? spectrum.width + 20 : 14
         anchors.bottomMargin: 14
         opacity: root.phase(0.16, 0.55)
         transform: Translate { y: -118 * (1 - root.revealProgress) }
