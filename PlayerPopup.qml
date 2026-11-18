@@ -21,6 +21,17 @@ PopupWindow {
   property bool expanded: false
   property var player: null
   property var queueController: null
+  property color artworkColor: Commons.Color.accent
+  property bool tintEnabled: false
+  property color backgroundColor: {
+    var base = Commons.Color.popups.background
+    if (!root.tintEnabled) return Qt.rgba(base.r, base.g, base.b, 1)
+    var color = root.artworkColor
+    return Qt.rgba(base.r * 0.72 + color.r * 0.16,
+                   base.g * 0.72 + color.g * 0.16,
+                   base.b * 0.72 + color.b * 0.16, 1)
+  }
+  Behavior on backgroundColor { ColorAnimation { duration: Style.duration(650); easing.type: Easing.InOutCubic } }
   property real reveal: 0
   property real expansion: 0
   property bool expandedSeeking: false
@@ -179,7 +190,7 @@ PopupWindow {
     height: root.cardHeight
     scale: 0.98 + 0.02 * root.reveal
     transformOrigin: root.bar && root.bar.position === "bottom" ? Item.Bottom : Item.Top
-    color: Qt.rgba(Commons.Color.popups.background.r, Commons.Color.popups.background.g, Commons.Color.popups.background.b, 1)
+    color: root.backgroundColor
     borderSpec: root.borderSpec
     padding: root.padding
     radius: 10

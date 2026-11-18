@@ -257,6 +257,8 @@ BarWidget {
     expandedSeeking: playerCard.seeking
     player: root.activePlayer
     queueController: root.queueController
+    artworkColor: playerCard.artworkColor
+    tintEnabled: root.hasMedia
     onExpandRequested: root.open()
     padding: 14
     contentWidth: fittedContentWidth(350)
@@ -271,6 +273,7 @@ BarWidget {
       active: root.popupOpen
       revealProgress: popup.expansion
       queueController: root.queueController
+      surface: popup.backgroundColor
       foreground: root.bar ? root.bar.foreground : Commons.Color.foreground
       accent: root.accent
       onCloseRequested: root.collapseToMini()

@@ -8,7 +8,8 @@ Item {
   property bool playing: false
   property string artUrl: ""
   property color fallbackColor: "#dddddd"
-  property color spectrumColor: fallbackColor
+  property color artworkColor: fallbackColor
+  property color spectrumColor: artworkColor
   property var levels: []
   property bool processFailed: false
   readonly property int barCount: Math.max(0, Math.min(24, Math.floor(width / 8)))
@@ -67,7 +68,7 @@ Item {
     property string requested: ""
     function loadArtwork() {
       requested = root.artUrl
-      if (!requested) { root.spectrumColor = root.fallbackColor; return }
+      if (!requested) { root.artworkColor = root.fallbackColor; return }
       loadImage(requested)
       if (isImageLoaded(requested)) requestPaint()
     }
@@ -92,11 +93,11 @@ Item {
       }
       var best = bins[0]
       for (var j = 1; j < bins.length; j++) if (bins[j].weight > best.weight) best = bins[j]
-      if (best.weight < 1) { root.spectrumColor = root.fallbackColor; return }
+      if (best.weight < 1) { root.artworkColor = root.fallbackColor; return }
       var rr = best.r / best.weight, gg = best.g / best.weight, bb = best.b / best.weight
       var brightness = Math.max(rr, gg, bb)
       var boost = Math.max(1, 0.82 / Math.max(0.01, brightness))
-      root.spectrumColor = Qt.rgba(Math.min(1, rr*boost), Math.min(1, gg*boost), Math.min(1, bb*boost), 1)
+      root.artworkColor = Qt.rgba(Math.min(1, rr*boost), Math.min(1, gg*boost), Math.min(1, bb*boost), 1)
     }
   }
 }

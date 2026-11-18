@@ -14,6 +14,7 @@ Item {
   function phase(from, to) { return Math.max(0, Math.min(1, (revealProgress - from) / (to - from))) }
   property color foreground: Commons.Color.foreground
   property color surface: Commons.Color.popups.background
+  readonly property color artworkColor: spectrum.artworkColor
   property color accent: Commons.Color.accent
   readonly property bool seeking: timeline.dragging
   property real position: 0
