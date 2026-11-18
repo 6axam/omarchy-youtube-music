@@ -13,10 +13,6 @@ MediaButton {
   property real spin: 0
   property real shuffleTravel: 0
   property real shuffleDirection: 1
-  readonly property real orbit: shuffleDirection * shuffleTravel * Math.PI * 2
-  readonly property real orbitX: 6 * Math.sin(orbit)
-  readonly property real orbitY: 4.5 * Math.sin(orbit * 2)
-  readonly property real orbitTwist: 38 * Math.sin(orbit)
   property real badgeProgress: 0
   property color ink: idleInk
   readonly property color idleInk: Qt.rgba(foreground.r, foreground.g, foreground.b, 0.43)
@@ -39,13 +35,13 @@ MediaButton {
     if (kind === "repeat") {
       repeatSpin.from = spin
       repeatSpin.to = spin + (visualState === "off" ? -360 : (visualState === "one" ? 720 : 360))
-      repeatSpin.duration = visualState === "one" ? 980 : 620
+      repeatSpin.duration = 700
       repeatTint.to = visualState === "off" ? idleInk : activeInk
-      badgeWait.duration = visualState === "one" ? 650 : 0
+      badgeWait.duration = visualState === "one" ? 320 : 0
       repeatMotion.restart()
     } else {
       shuffleTravel = 0
-      shuffleDirection = visualState === "off" ? -1 : 1
+      shuffleDirection = 1
       shuffleTint.to = visualState === "off" ? idleInk : activeInk
       shuffleMotion.restart()
     }
@@ -100,24 +96,15 @@ MediaButton {
       visible: root.kind === "repeat"
       ink: root.ink
     }
-    ShuffleArrow {
-      width: parent.width
-      height: width
+    ShuffleGlyph {
+      anchors.centerIn: parent
+      width: Math.max(42,root.glyphSize*2.2)
+      height: Math.max(28,root.glyphSize*1.5)
       visible: root.kind === "shuffle"
+      glyphSize: root.glyphSize+2
       ink: root.ink
-      x: root.orbitX
-      y: root.orbitY
-      rotation: root.orbitTwist
-    }
-    ShuffleArrow {
-      width: parent.width
-      height: width
-      visible: root.kind === "shuffle"
-      upper: true
-      ink: root.ink
-      x: -root.orbitX
-      y: root.orbitY
-      rotation: -root.orbitTwist
+      travel: root.shuffleTravel
+      reverse: root.shuffleDirection < 0
     }
   }
 
@@ -149,7 +136,7 @@ MediaButton {
       id: repeatTint
       target: root
       property: "ink"
-      duration: 360
+      duration: 700
       easing.type: Easing.OutCubic
     }
     SequentialAnimation {
@@ -173,14 +160,14 @@ MediaButton {
       property: "shuffleTravel"
       from: 0
       to: 1
-      duration: 1040
-      easing.type: Easing.InOutCubic
+      duration: 700
+      easing.type: Easing.Linear
     }
     ColorAnimation {
       id: shuffleTint
       target: root
       property: "ink"
-      duration: 220
+      duration: 700
       easing.type: Easing.OutCubic
     }
     onFinished: root.settle()

@@ -8,6 +8,11 @@ Rectangle {
   property color accent: Commons.Color.accent
   property color foreground: Commons.Color.foreground
   property int renderSize: 0
+  property bool fadeOnChange: true
+  readonly property bool artworkSettled: !artUrl ||
+    (hasArt && (front === 0 ? first : second).source.toString() === artUrl && (front === 0 ? first : second).status === Image.Ready) ||
+    (first.source.toString() === artUrl && first.status === Image.Error) ||
+    (second.source.toString() === artUrl && second.status === Image.Error)
   property int front: 0
   property bool hasArt: false
   radius: 4
@@ -36,7 +41,7 @@ Rectangle {
     sourceSize.height: root.renderSize > 0 ? root.renderSize : Math.ceil(height * 2)
     opacity: root.hasArt && root.front === 0 ? 1 : 0
     scale: root.front === 0 ? (hover.hovered ? 1.035 : 1) : 1.04
-    Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+    Behavior on opacity { enabled: root.fadeOnChange; NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
     Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutCubic } }
     onStatusChanged: {
       if (source.toString() !== root.artUrl) return
@@ -53,7 +58,7 @@ Rectangle {
     sourceSize.height: root.renderSize > 0 ? root.renderSize : Math.ceil(height * 2)
     opacity: root.hasArt && root.front === 1 ? 1 : 0
     scale: root.front === 1 ? (hover.hovered ? 1.035 : 1) : 1.04
-    Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+    Behavior on opacity { enabled: root.fadeOnChange; NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
     Behavior on scale { NumberAnimation { duration: 380; easing.type: Easing.OutCubic } }
     onStatusChanged: {
       if (source.toString() !== root.artUrl) return
@@ -64,7 +69,7 @@ Rectangle {
   Text {
     anchors.centerIn: parent
     opacity: root.hasArt ? 0 : 1
-    Behavior on opacity { NumberAnimation { duration: 180 } }
+    Behavior on opacity { enabled: root.fadeOnChange; NumberAnimation { duration: 180 } }
     text: "󰝚"
     color: root.foreground
     font.family: Style.font.family

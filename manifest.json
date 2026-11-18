@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "6axam.youtube-music",
   "name": "YouTube Music",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "6axam",
   "description": "An animated YouTube Music bar player with a synced queue for Omarchy.",
   "kinds": [

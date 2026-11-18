@@ -25,7 +25,8 @@ Item {
 
   implicitHeight: content.implicitHeight
   Keys.onEscapePressed: closeRequested()
-  onActiveChanged: { if (active) { syncPosition(); forceActiveFocus(); Qt.callLater(upcomingList.revealCurrent) } }
+  onActiveChanged: { if (active) { syncPosition(); forceActiveFocus(); Qt.callLater(upcomingList.revealCurrent) } else upcomingList.stopWheel() }
+  onQueueControllerChanged: Qt.callLater(upcomingList.syncQueue)
   onPlayerChanged: syncPosition()
 
   function syncPosition() {
@@ -85,7 +86,7 @@ Item {
     Item {
       width: parent.width
       height: 168
-      MediaArtwork {
+      SlidingArtwork {
         x: 0
         y: -34 * (1 - root.revealProgress)
         width: 56 + (parent.width - 56) * root.revealProgress
@@ -93,6 +94,8 @@ Item {
         renderSize: 640
         opacity: root.phase(0, 0.18)
         artUrl: root.player ? (root.player.trackArtUrl || "") : ""
+        trackKey: root.player ? JSON.stringify([root.player.trackTitle || "", root.player.trackArtist || "", root.player.trackAlbum || ""]) : ""
+        active: root.active
         foreground: root.foreground
         accent: root.accent
       }
@@ -134,7 +137,8 @@ Item {
         opacity: root.phase(0.16, 0.55)
         transform: Translate { y: -118 * (1 - root.revealProgress) }
         spacing: 5
-        MotionText {
+        SlidingText {
+          active: root.active
           width: parent.width
           text: root.hasMedia ? (root.player.trackTitle || "Без названия") : "Включи что-нибудь"
           color: "white"
@@ -146,7 +150,8 @@ Item {
           elide: Text.ElideRight
           textFormat: Text.PlainText
         }
-        MotionText {
+        SlidingText {
+          active: root.active
           width: parent.width
           text: root.hasMedia ? (root.player.trackArtist || root.player.identity || "") : "Музыка появится здесь автоматически"
           color: "#c7ffffff"
@@ -155,7 +160,8 @@ Item {
           elide: Text.ElideRight
           textFormat: Text.PlainText
         }
-        MotionText {
+        SlidingText {
+          active: root.active
           width: parent.width
           visible: text !== ""
           text: root.player ? (root.player.trackAlbum || "") : ""
@@ -326,53 +332,149 @@ Item {
         height: Math.min(5, count) * 46
         clip: true
         boundsBehavior: Flickable.StopAtBounds
-        NumberAnimation {
-          id: wheelScroll
-          target: upcomingList
-          property: "contentY"
-          duration: 180
-          easing.type: Easing.OutCubic
+        cacheBuffer: height
+        property real wheelGoal: 0
+        property real wheelVelocity: 0
+        property real wheelBurst: 0
+        property real wheelDirection: 0
+        property double lastWheelTime: 0
+        property bool pixelWheel: false
+
+        function clampScroll(value) {
+          var top=originY
+          return Math.max(top,Math.min(Math.max(top,top+contentHeight-height),value))
         }
-        onDraggingChanged: if (dragging) wheelScroll.stop()
+        function stopWheel() {
+          wheelScroll.stop()
+          wheelVelocity=0
+          wheelGoal=contentY
+          wheelBurst=0
+          lastWheelTime=0
+        }
+        function scrollWheel(pixelDelta,angleDelta) {
+          var delta=pixelDelta !== 0 ? pixelDelta : angleDelta/120
+          if (!delta) return false
+          var now=Date.now(),direction=delta>0 ? 1 : -1
+          var sameBurst=now-lastWheelTime<190 && direction===wheelDirection
+          if (!sameBurst) wheelBurst=0
+          if (wheelDirection && direction!==wheelDirection) wheelVelocity=0
+          if (!wheelScroll.running) wheelGoal=contentY
+          pixelWheel=pixelDelta !== 0
+          // Deliberate first notch, then quadratic gain as wheel input builds.
+          var distance=pixelWheel ? delta*1.35 : delta*92*(0.65+0.5*wheelBurst+0.5*wheelBurst*wheelBurst)
+          if (!pixelWheel) wheelBurst=Math.min(1,wheelBurst+Math.min(3,Math.abs(delta))*0.18)
+          lastWheelTime=now
+          wheelDirection=direction
+          cancelFlick()
+          wheelGoal=clampScroll(wheelGoal-distance)
+          if (!wheelScroll.running) wheelScroll.start()
+          return true
+        }
+        function advanceScroll(frameSeconds) {
+          if (!root.active || dragging) { stopWheel(); return }
+          var dt=Math.max(0.001,Math.min(0.034,frameSeconds || 1/60))
+          wheelGoal=clampScroll(wheelGoal)
+          // Exact critically damped step: continuous velocity, short coasting
+          // tail and no repeated restart of an easing animation on every tick.
+          var omega=pixelWheel ? 30 : 19
+          var offset=contentY-wheelGoal
+          var decay=Math.exp(-omega*dt)
+          var step=(wheelVelocity+omega*offset)*dt
+          var next=wheelGoal+(offset+step)*decay
+          wheelVelocity=(wheelVelocity-omega*step)*decay
+          contentY=clampScroll(next)
+          if (Math.abs(next-contentY)>0.01) wheelVelocity=0
+          if (Math.abs(wheelGoal-contentY)<0.15 && Math.abs(wheelVelocity)<3) {
+            contentY=wheelGoal
+            wheelScroll.stop()
+            wheelVelocity=0
+          }
+        }
+        FrameAnimation {
+          id: wheelScroll
+          onTriggered: upcomingList.advanceScroll(frameTime)
+        }
+        onDraggingChanged: if (dragging) stopWheel()
+        onFlickingChanged: if (flicking) stopWheel()
         WheelHandler {
           target: null
           acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
           onWheel: function(event) {
-            var delta = event.pixelDelta.y !== 0 ? event.pixelDelta.y * 2 : event.angleDelta.y / 120 * 92
-            if (delta === 0) { event.accepted = false; return }
-            var top = upcomingList.originY
-            var bottom = Math.max(top, top + upcomingList.contentHeight - upcomingList.height)
-            upcomingList.cancelFlick()
-            var continuing = wheelScroll.running && (wheelScroll.to - upcomingList.contentY) * delta <= 0
-            var base = continuing ? wheelScroll.to : upcomingList.contentY
-            wheelScroll.stop()
-            var destination = Math.max(top, Math.min(bottom, base - delta))
-            wheelScroll.duration = event.pixelDelta.y !== 0 ? 65 : 220
-            wheelScroll.to = destination
-            wheelScroll.restart()
-            event.accepted = true
+            event.accepted=upcomingList.scrollWheel(event.pixelDelta.y,event.angleDelta.y)
           }
         }
-        model: root.queueController ? root.queueController.items : []
-        function revealCurrent() {
-          if (root.active && root.queueController && root.queueController.currentIndex >= 0)
-            positionViewAtIndex(root.queueController.currentIndex, ListView.Contain)
+
+        // A persistent model keeps delegates alive when only "current" changes.
+        ListModel { id: queueRows; dynamicRoles: true }
+        model: queueRows
+        function syncQueue() {
+          var entries=root.queueController ? root.queueController.items : []
+          var wasEmpty=queueRows.count===0
+          var occurrences={}
+          for (var i=0;i<entries.length;i++) {
+            var entry=entries[i]
+            var identity=String(entry.id || entry.videoId || "index:"+entry.index)
+            var occurrence=occurrences[identity] || 0
+            occurrences[identity]=occurrence+1
+            var key=identity+"#"+occurrence
+            var json=JSON.stringify(entry)
+            if (i>=queueRows.count || queueRows.get(i).entryKey!==key) {
+              var found=-1
+              for (var j=i+1;j<queueRows.count;j++) {
+                if (queueRows.get(j).entryKey===key) { found=j; break }
+              }
+              if (found>=0) queueRows.move(found,i,1)
+              else queueRows.insert(i,{entryKey:key,entryJson:json,trackData:entry})
+            }
+            if (queueRows.get(i).entryJson!==json) {
+              queueRows.setProperty(i,"trackData",entry)
+              queueRows.setProperty(i,"entryJson",json)
+            }
+          }
+          if (queueRows.count>entries.length) queueRows.remove(entries.length,queueRows.count-entries.length)
+          if (wasEmpty && queueRows.count) Qt.callLater(revealCurrent)
+          wheelGoal=clampScroll(wheelGoal)
         }
-        onModelChanged: { wheelScroll.stop(); Qt.callLater(revealCurrent) }
+        function revealCurrent() {
+          if (root.active && root.queueController && root.queueController.currentIndex>=0) {
+            stopWheel()
+            positionViewAtIndex(root.queueController.currentIndex,ListView.Contain)
+            wheelGoal=contentY
+          }
+        }
+        Component.onCompleted: syncQueue()
+        Connections {
+          target: root.queueController
+          ignoreUnknownSignals: true
+          function onItemsChanged() { upcomingList.syncQueue() }
+          function onSourceChanged() {
+            upcomingList.stopWheel()
+            upcomingList.syncQueue()
+            Qt.callLater(upcomingList.revealCurrent)
+          }
+        }
         delegate: Rectangle {
           id: trackRow
-          required property var modelData
+          required property var trackData
+          readonly property var modelData: trackData
           width: upcomingList.width
           height: 46
           radius: 5
           property real arrival: 0
-          Component.onCompleted: arrival = 1
-          opacity: arrival
-          scale: trackPointer.pressed ? 0.975 : 1
-          transform: Translate { x: (1 - trackRow.arrival) * 8 }
+          property real pressScale: trackPointer.pressed ? 0.975 : 1
+          readonly property real viewportCenter: y-upcomingList.contentY+height/2
+          readonly property real edgeDistance: Math.min(viewportCenter,upcomingList.height-viewportCenter)
+          readonly property real edgeFraction: Math.max(0,Math.min(1,edgeDistance/52))
+          readonly property real edgeReveal: edgeFraction*edgeFraction*(3-2*edgeFraction)
+          readonly property real edgeSide: viewportCenter<upcomingList.height/2 ? -1 : 1
+          Component.onCompleted: arrival=1
+          opacity: arrival*(0.35+0.65*edgeReveal)
+          scale: (0.88+0.12*edgeReveal)*pressScale
+          transformOrigin: Item.Center
+          transform: Translate { y: trackRow.edgeSide*(11*(1-trackRow.edgeReveal)+8*(1-trackRow.arrival)) }
           Behavior on arrival { NumberAnimation { duration: 230; easing.type: Easing.OutCubic } }
           Behavior on color { ColorAnimation { duration: 160 } }
-          Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+          Behavior on pressScale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
           color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, modelData.current ? 0.16 : (trackPointer.containsMouse ? 0.08 : 0))
           Text {
             id: trackNumber
