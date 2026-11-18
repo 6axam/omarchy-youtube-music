@@ -256,7 +256,8 @@ Item {
           onClicked: root.action("previous")
         }
         MediaButton {
-          icon: root.playing ? "󰏤" : "󰐊"
+          playbackIcon: true
+          playing: root.playing
           label: root.playing ? "Пауза" : "Продолжить"
           diameter: 48
           glyphSize: 24

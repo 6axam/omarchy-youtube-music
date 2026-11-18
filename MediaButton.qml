@@ -8,6 +8,8 @@ Rectangle {
   property string label: ""
   property bool primary: false
   property bool glyphVisible: true
+  property bool playbackIcon: false
+  property bool playing: false
   property bool toggled: false
   property color foreground: Commons.Color.foreground
   property color accent: Commons.Color.accent
@@ -66,13 +68,22 @@ Rectangle {
     NumberAnimation { target: root; property: "ripple"; to: 1; duration: 340; easing.type: Easing.OutCubic }
   }
   MotionText {
-    visible: root.glyphVisible
+    visible: root.glyphVisible && !root.playbackIcon
     anchors.centerIn: parent
     text: root.icon
     color: root.primary ? root.surface : (root.toggled ? root.accent : root.foreground)
     font.family: Style.font.family
     font.pixelSize: root.glyphSize
     textFormat: Text.PlainText
+  }
+  Loader {
+    anchors.centerIn: parent
+    width: root.glyphSize; height: root.glyphSize
+    active: root.glyphVisible && root.playbackIcon
+    sourceComponent: PlaybackGlyph {
+      playing: root.playing
+      ink: root.primary ? root.surface : (root.toggled ? root.accent : root.foreground)
+    }
   }
   MouseArea {
     id: pointer
