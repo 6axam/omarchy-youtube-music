@@ -57,6 +57,18 @@ BarWidget {
 
   function open() { popupOpen = true }
   function close() { popupOpen = false; hoverOpen = false }
+  function collapseToMini() {
+    showHover.stop()
+    hideHover.stop()
+    // Keep the shared popup open while only its expanded state changes.
+    hoverOpen = hasMedia
+    popupOpen = false
+    if (hoverOpen && !playerHovered) hideHover.restart()
+  }
+  function togglePopup() {
+    if (popupOpen) collapseToMini()
+    else open()
+  }
   function action(name) {
     if (mediaService && activePlayer) mediaService.runAction(name, false, mediaService.playerKey(activePlayer))
   }
@@ -102,7 +114,7 @@ BarWidget {
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
         onClicked: function(mouse) {
           if (mouse.button === Qt.MiddleButton) root.action("playPause")
-          else root.popupOpen = !root.popupOpen
+          else root.togglePopup()
         }
       }
     }
@@ -194,7 +206,7 @@ BarWidget {
           diameter: 24
           glyphSize: 20
           foreground: root.foreground
-          onClicked: root.popupOpen = !root.popupOpen
+          onClicked: root.togglePopup()
         }
       }
 
@@ -202,7 +214,7 @@ BarWidget {
         anchors.fill: parent
         enabled: !root.controlsVisible
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.popupOpen = !root.popupOpen
+        onClicked: root.togglePopup()
       }
     }
   }
@@ -233,7 +245,7 @@ BarWidget {
       queueController: musicQueue
       foreground: root.bar ? root.bar.foreground : Commons.Color.foreground
       accent: root.accent
-      onCloseRequested: root.close()
+      onCloseRequested: root.collapseToMini()
     }
   }
 }
