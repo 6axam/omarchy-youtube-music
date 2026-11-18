@@ -117,9 +117,9 @@ Item {
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 10
-        width: appName.implicitWidth + 12
-        height: 18
-        radius: 9
+        width: appName.implicitWidth + 10
+        height: 15
+        radius: 7.5
         color: "#a0000000"
         Text {
           id: appName
@@ -127,7 +127,7 @@ Item {
           text: root.player ? (root.player.identity || "Плеер") : "Нет источника"
           color: "#eeeeee"
           font.family: Style.font.family
-          font.pixelSize: 9
+          font.pixelSize: 8
           textFormat: Text.PlainText
         }
       }
