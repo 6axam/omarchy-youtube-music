@@ -234,7 +234,8 @@ BarWidget {
     onExpandRequested: root.open()
     padding: 14
     contentWidth: fittedContentWidth(350)
-    contentHeight: fittedContentHeight(playerCard.implicitHeight)
+    // A hidden popup can report zero implicit height until it is shown.
+    contentHeight: fittedContentHeight(Math.max(314, playerCard.implicitHeight))
     MediaCard {
       id: playerCard
       anchors.fill: parent
