@@ -337,7 +337,6 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         cacheBuffer: height
         property real wheelGoal: 0
-        property real wheelCoast: 0
         property real wheelVelocity: 0
         property real wheelBurst: 0
         property real wheelDirection: 0
@@ -352,7 +351,6 @@ Item {
           wheelScroll.stop()
           wheelVelocity=0
           wheelGoal=contentY
-          wheelCoast=0
           wheelBurst=0
           lastWheelTime=0
         }
@@ -361,24 +359,17 @@ Item {
           if (!delta) return false
           var now=Date.now(),direction=delta>0 ? 1 : -1
           var sameBurst=now-lastWheelTime<190 && direction===wheelDirection
-          var reversing=wheelDirection && direction!==wheelDirection
           if (!sameBurst) wheelBurst=0
-          if (reversing) wheelVelocity=0
-          var base=wheelScroll.running && !reversing ? wheelGoal-wheelCoast : contentY
-          // Never pull back through distance already travelled by the coast.
-          base=direction>0 ? Math.min(base,contentY) : Math.max(base,contentY)
+          if (wheelDirection && direction!==wheelDirection) wheelVelocity=0
+          if (!wheelScroll.running) wheelGoal=contentY
           pixelWheel=pixelDelta !== 0
+          // Deliberate first notch, then quadratic gain as wheel input builds.
           var distance=pixelWheel ? delta*1.35 : delta*92*(0.65+0.5*wheelBurst+0.5*wheelBurst*wheelBurst)
-          if (pixelWheel) wheelBurst=Math.min(1,wheelBurst+Math.min(0.2,Math.abs(delta)/80))
-          else wheelBurst=Math.min(1,wheelBurst+Math.min(3,Math.abs(delta))*0.18)
+          if (!pixelWheel) wheelBurst=Math.min(1,wheelBurst+Math.min(3,Math.abs(delta))*0.18)
           lastWheelTime=now
           wheelDirection=direction
           cancelFlick()
-          var coastStrength=Math.max(0,(wheelBurst-0.18)/0.82)
-          var coastDistance=(pixelWheel ? 65 : 190)*Math.pow(coastStrength,1.5)
-          var drivenGoal=clampScroll(base-distance)
-          wheelGoal=clampScroll(drivenGoal-direction*coastDistance)
-          wheelCoast=wheelGoal-drivenGoal
+          wheelGoal=clampScroll(wheelGoal-distance)
           if (!wheelScroll.running) wheelScroll.start()
           return true
         }
@@ -388,8 +379,7 @@ Item {
           wheelGoal=clampScroll(wheelGoal)
           // Exact critically damped step: continuous velocity, short coasting
           // tail and no repeated restart of an easing animation on every tick.
-          // A fast burst receives a longer tail; a single notch stays precise.
-          var omega=pixelWheel ? 30-12*wheelBurst : 19-9*wheelBurst
+          var omega=pixelWheel ? 30 : 19
           var offset=contentY-wheelGoal
           var decay=Math.exp(-omega*dt)
           var step=(wheelVelocity+omega*offset)*dt
@@ -401,7 +391,6 @@ Item {
             contentY=wheelGoal
             wheelScroll.stop()
             wheelVelocity=0
-            wheelCoast=0
           }
         }
         FrameAnimation {
