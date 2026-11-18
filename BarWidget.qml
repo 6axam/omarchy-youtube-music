@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Services.Mpris
 import qs.Ui
 import qs.Commons
 import qs.Commons as Commons
@@ -7,18 +8,43 @@ import qs.Commons as Commons
 BarWidget {
   id: root
   moduleName: "6axam.youtube-music"
-  readonly property var queueController: musicQueue
+  readonly property var queueController: musicQueue.available ? musicQueue : null
   readonly property bool useMusicQueue: musicQueue.available
-  readonly property var activePlayer: musicQueue.available ? musicQueue.player : null
-  readonly property var sourcePlayers: musicQueue.available ? [musicQueue.player] : []
+  readonly property var fallbackPlayer: {
+    var players = Mpris.players ? Mpris.players.values : []
+    var candidate = null
+    for (var i = 0; i < players.length; ++i) {
+      var p = players[i]
+      var name = String(p.dbusName || "").toLowerCase()
+      if (name.indexOf("chromium") < 0 && name.indexOf("opera") < 0) continue
+      if (!p.trackTitle && !p.trackArtist) continue
+      if (p.isPlaying) return p
+      if (!candidate) candidate = p
+    }
+    return candidate
+  }
+  readonly property var activePlayer: musicQueue.available ? musicQueue.player : fallbackPlayer
+  readonly property var sourcePlayers: activePlayer ? [activePlayer] : []
   readonly property var mediaService: mediaRouter
   MusicQueue { id: musicQueue }
   QtObject {
     id: mediaRouter
-    function playerKey(player) { return player === musicQueue.player ? String(musicQueue.snapshot.sessionId || "") : "" }
-    function selectPlayer(key) { musicQueue.bindSource(key) }
+    function playerKey(player) {
+      return player === musicQueue.player ? String(musicQueue.snapshot.sessionId || "") : String(player && player.dbusName || "")
+    }
+    function selectPlayer(key) { if (musicQueue.available) musicQueue.bindSource(key) }
     function runAction(action, feedback, key) {
-      if (key === String(musicQueue.snapshot.sessionId || "")) musicQueue.send(action)
+      if (musicQueue.available) {
+        if (key === String(musicQueue.snapshot.sessionId || "")) musicQueue.send(action)
+        return
+      }
+      var player = root.fallbackPlayer
+      if (!player || key !== playerKey(player)) return
+      if (action === "next" && player.canGoNext) player.next()
+      else if (action === "previous" && player.canGoPrevious) player.previous()
+      else if (action === "playPause" && player.canTogglePlaying) player.togglePlaying()
+      else if (action === "play" && player.canPlay) player.play()
+      else if (action === "pause" && player.canPause) player.pause()
     }
   }
   readonly property bool hasMedia: activePlayer !== null && !!(activePlayer.trackTitle || activePlayer.trackArtist)
@@ -230,7 +256,7 @@ BarWidget {
     triggerMode: "hover"
     expandedSeeking: playerCard.seeking
     player: root.activePlayer
-    queueController: musicQueue
+    queueController: root.queueController
     onExpandRequested: root.open()
     padding: 14
     contentWidth: fittedContentWidth(350)
@@ -244,7 +270,7 @@ BarWidget {
       sources: root.sourcePlayers
       active: root.popupOpen
       revealProgress: popup.expansion
-      queueController: musicQueue
+      queueController: root.queueController
       foreground: root.bar ? root.bar.foreground : Commons.Color.foreground
       accent: root.accent
       onCloseRequested: root.collapseToMini()
